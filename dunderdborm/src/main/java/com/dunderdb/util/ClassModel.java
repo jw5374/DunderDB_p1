@@ -7,7 +7,7 @@ import java.util.List;
 import com.dunderdb.annotations.*;
 
 public class ClassModel<T> {
-	private Class<?> clazz;
+    private Class<?> clazz;
     private ClassPrimaryKey primKey;
     private List<ClassSerialKey> serKeys;
     private List<ClassForeignKey> forKeys;

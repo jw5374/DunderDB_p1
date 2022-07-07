@@ -14,6 +14,7 @@ public class ConnectionPool {
         ds.setMinIdle(5);
         ds.setMaxIdle(10);
         ds.setMaxOpenPreparedStatements(100);
+        ds.setDefaultSchema("public");
     }
 
     private ConnectionPool(){ }
@@ -35,7 +36,15 @@ public class ConnectionPool {
     }
 
     static void setDriver(String driverName) {
-        ds.setDriverClassName(driverName);;
+        ds.setDriverClassName(driverName);
+    }
+
+    static void setMaxIdle(int maxIdle) {
+        ds.setMaxIdle(maxIdle);
+    }
+
+    static void setMaxOpenPreparedStatements(int maxStatements) {
+        ds.setMaxOpenPreparedStatements(maxStatements);
     }
 
     public static void closeConnections() throws SQLException {

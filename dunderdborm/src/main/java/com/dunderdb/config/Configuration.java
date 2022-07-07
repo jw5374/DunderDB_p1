@@ -46,6 +46,14 @@ public class Configuration {
         ConnectionPool.setDriver(driverName);
     }
 
+    public void setMaxIdleConnections(int max) {
+        ConnectionPool.setMaxIdle(max);
+    }
+
+    public void setMaxOpenStatements(int max) {
+        ConnectionPool.setMaxOpenPreparedStatements(max);
+    }
+
     public Connection getConnection() {
         try {
             return ConnectionPool.getConnection();

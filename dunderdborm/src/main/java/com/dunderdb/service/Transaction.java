@@ -12,27 +12,20 @@ public class Transaction implements DunderTx {
         return name;
     }
     @Override
-    public void processdbComands(){
-
+    public void rollback() {
+        // TODO Auto-generated method stub
+        
     }
 
     @Override
-     public void checkForErrors(){
-
-     }
-
-     @Override
-     public void commitTransaction(){
+    public void savePoint() {
+        // TODO Auto-generated method stub
         
-     }
+    }
 
-
+    @Override
+    public void commitTransaction(){
     
-
-   
-    
-
-
-    
+    }  
     
 }

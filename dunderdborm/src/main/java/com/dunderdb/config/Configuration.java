@@ -7,11 +7,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.dbcp2.BasicDataSource;
+
 import com.dunderdb.annotations.Table;
 import com.dunderdb.util.ClassColumn;
 import com.dunderdb.util.ClassModel;
 import com.dunderdb.util.ClassPrimaryKey;
-import com.dunderdb.util.SQLTypeConverter;
+import com.dunderdb.util.SQLConverter;
 
 public class Configuration {
     
@@ -62,16 +64,16 @@ public class Configuration {
             for(ClassModel<Class<?>> mod : modelsList) {
                 ClassPrimaryKey pk = mod.getPrimaryKey();
                 List<ClassColumn> cols = mod.getColumns();
-                String sql = "CREATE TABLE IF NOT EXISTS " + mod.getClazz().getAnnotation(Table.class).name() + " (";
                 Statement stmt = conn.createStatement();
-                String primary = pk.getColumnName() + " " + SQLTypeConverter.convert(pk.getType().toString()) + " PRIMARY KEY, ";
+                String sql = "CREATE TABLE IF NOT EXISTS " + mod.getClazz().getAnnotation(Table.class).name() + " (";
+                String primary = pk.getColumnName() + " " + SQLConverter.convertType(pk.getType().toString()) + " PRIMARY KEY, ";
                 sql += primary;
                 for(int i = 0; i < cols.size(); i++) {
                     if(i == cols.size() - 1) {
-                        String col = cols.get(i).getColumnName() + " " + SQLTypeConverter.convert(cols.get(i).getType().toString());
+                        String col = cols.get(i).getColumnName() + " " + SQLConverter.convertType(cols.get(i).getType().toString());
                         sql += col;
                     } else {
-                        String col = cols.get(i).getColumnName() + " " + SQLTypeConverter.convert(cols.get(i).getType().toString()) + ", ";
+                        String col = cols.get(i).getColumnName() + " " + SQLConverter.convertType(cols.get(i).getType().toString()) + ", ";
                         
                         sql += col;
                     }
@@ -84,7 +86,7 @@ public class Configuration {
         }
     }
 
-    public Connection getConnection() {
+    private Connection getConnection() {
         try {
             return ConnectionPool.getConnection();
         } catch (SQLException e) {
@@ -92,5 +94,10 @@ public class Configuration {
             System.out.println(e.getMessage());
             return null;
         }
+    }
+
+    public SessionFactory getSessionFactory() {
+        BasicDataSource ds = ConnectionPool.getDs();
+        return new SessionFactory(ds);
     }
 }

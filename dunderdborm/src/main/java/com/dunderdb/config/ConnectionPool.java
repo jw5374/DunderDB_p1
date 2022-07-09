@@ -9,7 +9,7 @@ public class ConnectionPool {
 
     // From https://www.baeldung.com/java-connection-pooling
     private static BasicDataSource ds = new BasicDataSource();
-    
+
     static {
         ds.setMinIdle(5);
         ds.setMaxIdle(10);
@@ -53,6 +53,10 @@ public class ConnectionPool {
 
     static Connection getConnection() throws SQLException {
         return ds.getConnection();
+    }
+
+    static BasicDataSource getDs() {
+        return ds;
     }
     
 }

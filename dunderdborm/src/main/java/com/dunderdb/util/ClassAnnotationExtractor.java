@@ -17,5 +17,9 @@ public abstract class ClassAnnotationExtractor {
         return field.getType();
     }
 
+    public Field getField() {
+        return this.field;
+    }
+
     public abstract String getColumnName();
 }

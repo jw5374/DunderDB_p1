@@ -1,21 +1,55 @@
 package com.dunderdb.config;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
+
+import org.apache.commons.dbcp2.BasicDataSource;
 
 import com.dunderdb.annotations.Table;
 import com.dunderdb.util.ClassColumn;
 import com.dunderdb.util.ClassModel;
 import com.dunderdb.util.ClassPrimaryKey;
-import com.dunderdb.util.SQLTypeConverter;
+import com.dunderdb.util.SQLConverter;
 
 public class Configuration {
     
     private List<ClassModel<Class<?>>> modelsList;
+
+    public Configuration() { }
+
+    public Configuration(String configName) throws IOException {
+        InputStream in = this.getClass().getClassLoader().getResourceAsStream(configName);
+        Properties prop = new Properties();
+        prop.load(in);
+        String url, user, pass, schema, driver, maxIdle, maxOpen;
+        url = prop.getProperty("DB_URL");
+        user = prop.getProperty("DB_USER");
+        pass = prop.getProperty("DB_PASS");
+        schema = prop.getProperty("DB_SCHEMA");
+        driver = prop.getProperty("DB_DRIVER");
+        maxIdle = prop.getProperty("MAX_IDLE_CONNECTIONS");
+        maxOpen = prop.getProperty("MAX_OPEN_STATEMENTS");
+        this.createConnection(url, user, pass);
+        if(schema != null) {
+            this.setConnectionSchema(schema);
+        }
+        if(driver != null) {
+            this.setConnectionDriver(driver);
+        }
+        if(maxIdle != null) {
+            this.setMaxIdleConnections(Integer.parseInt(maxIdle));
+        }
+        if(maxOpen != null) {
+            this.setMaxOpenStatements(Integer.parseInt(maxOpen));
+        }
+    }
 
     public Configuration addAnnotatedClass(Class<?> clazz) {
         if(modelsList == null) modelsList = new ArrayList<>();
@@ -62,16 +96,16 @@ public class Configuration {
             for(ClassModel<Class<?>> mod : modelsList) {
                 ClassPrimaryKey pk = mod.getPrimaryKey();
                 List<ClassColumn> cols = mod.getColumns();
-                String sql = "CREATE TABLE IF NOT EXISTS " + mod.getClazz().getAnnotation(Table.class).name() + " (";
                 Statement stmt = conn.createStatement();
-                String primary = pk.getColumnName() + " " + SQLTypeConverter.convert(pk.getType().toString()) + " PRIMARY KEY, ";
+                String sql = "CREATE TABLE IF NOT EXISTS " + mod.getClazz().getAnnotation(Table.class).name() + " (";
+                String primary = pk.getColumnName() + " " + SQLConverter.convertType(pk.getType().toString()) + " PRIMARY KEY, ";
                 sql += primary;
                 for(int i = 0; i < cols.size(); i++) {
                     if(i == cols.size() - 1) {
-                        String col = cols.get(i).getColumnName() + " " + SQLTypeConverter.convert(cols.get(i).getType().toString());
+                        String col = cols.get(i).getColumnName() + " " + SQLConverter.convertType(cols.get(i).getType().toString());
                         sql += col;
                     } else {
-                        String col = cols.get(i).getColumnName() + " " + SQLTypeConverter.convert(cols.get(i).getType().toString()) + ", ";
+                        String col = cols.get(i).getColumnName() + " " + SQLConverter.convertType(cols.get(i).getType().toString()) + ", ";
                         
                         sql += col;
                     }
@@ -84,7 +118,7 @@ public class Configuration {
         }
     }
 
-    public Connection getConnection() {
+    private Connection getConnection() {
         try {
             return ConnectionPool.getConnection();
         } catch (SQLException e) {
@@ -92,5 +126,10 @@ public class Configuration {
             System.out.println(e.getMessage());
             return null;
         }
+    }
+
+    public SessionFactory getSessionFactory() {
+        BasicDataSource ds = ConnectionPool.getDs();
+        return new SessionFactory(ds);
     }
 }

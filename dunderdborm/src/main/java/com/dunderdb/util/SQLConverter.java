@@ -7,7 +7,6 @@ import java.util.List;
 import com.dunderdb.annotations.Column;
 import com.dunderdb.annotations.ForeignKey;
 import com.dunderdb.annotations.PrimaryKey;
-import com.dunderdb.annotations.SerialKey;
 import com.dunderdb.annotations.Table;
 import com.dunderdb.exceptions.UnexpectedTypeException;
 
@@ -17,11 +16,11 @@ public class SQLConverter {
             case "class java.lang.String":
                 return "TEXT";
             case "int":
-                return "NUMERIC";
+                return "INTEGER";
             case "float":
-                return "REAL";
+                return "NUMERIC";
             case "double":
-                return "DOUBLE";
+                return "NUMERIC";
             default:
                 throw new UnexpectedTypeException();
         }
@@ -52,20 +51,6 @@ public class SQLConverter {
             }
         } 
         return null;
-    }
-
-    public static List<ClassSerialKey> getObjectSerialKeys(Object object) {
-        Field[] fields = object.getClass().getDeclaredFields();
-        List<ClassSerialKey> skeys = new ArrayList<>();
-        for(Field field : fields) {
-            SerialKey skey = field.getAnnotation(SerialKey.class);
-
-            if(skey != null) {
-                skeys.add(new ClassSerialKey(field));
-            }
-        } 
-        
-        return skeys;
     }
     
     public static List<ClassForeignKey> getObjectForeignKeys(Object object) {

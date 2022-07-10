@@ -15,6 +15,7 @@ public class ConnectionPool {
         ds.setMaxIdle(10);
         ds.setMaxOpenPreparedStatements(100);
         ds.setDefaultSchema("public");
+        ds.setDriverClassName("org.postgresql.Driver");
     }
 
     private ConnectionPool(){ }

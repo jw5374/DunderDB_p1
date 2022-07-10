@@ -18,5 +18,9 @@ public class ClassPrimaryKey extends ClassAnnotationExtractor {
     public String getColumnName() {
         return field.getAnnotation(PrimaryKey.class).name();
     }
+
+    public boolean isSerial() {
+        return field.getAnnotation(PrimaryKey.class).serial();
+    }
     
 }

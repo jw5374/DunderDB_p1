@@ -111,7 +111,11 @@ public class Configuration {
                     if(!cols.get(i).getType().toString().equals("int") && cols.get(i).isSerial()) {
                         throw new SerialMismatchException();
                     }
-                    sql.append(cols.get(i).getColumnName() + " " + (cols.get(i).isSerial() ? "serial" : SQLConverter.convertType(cols.get(i).getType().toString())) + ", ");
+                    sql.append(cols.get(i).getColumnName() + " " + (cols.get(i).isSerial() ? "serial" : SQLConverter.convertType(cols.get(i).getType().toString())));
+                    if(cols.get(i).isUnique()) {
+                        sql.append(" UNIQUE");
+                    }
+                    sql.append(", ");
                 }
                 for(int i = 0; i < fkeys.size(); i++) {
                     sql.append(fkeys.get(i).getColumnName() + " " + SQLConverter.convertType(fkeys.get(i).getType().toString()) + " REFERENCES " + fkeys.get(i).getReference() + " ON DELETE CASCADE, ");

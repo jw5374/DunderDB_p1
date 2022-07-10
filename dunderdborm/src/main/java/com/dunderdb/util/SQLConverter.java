@@ -1,8 +1,10 @@
 package com.dunderdb.util;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import com.dunderdb.annotations.Column;
 import com.dunderdb.annotations.ForeignKey;
@@ -11,19 +13,21 @@ import com.dunderdb.annotations.Table;
 import com.dunderdb.exceptions.UnexpectedTypeException;
 
 public class SQLConverter {
+    private static Properties mapping;
+
     public static String convertType(String javaType) {
-        switch(javaType) {
-            case "class java.lang.String":
-                return "TEXT";
-            case "int":
-                return "INTEGER";
-            case "float":
-                return "NUMERIC";
-            case "double":
-                return "NUMERIC";
-            default:
-                throw new UnexpectedTypeException();
+        if(mapping == null) {
+            mapping = new Properties();
+            try {
+                mapping.load(SQLConverter.class.getClassLoader().getResourceAsStream("sqlmappings.properties"));
+            } catch(IOException e) {
+                System.out.println(e.getMessage());
+            }
         }
+        if(mapping.getProperty(javaType) == null) {
+            throw new UnexpectedTypeException();
+        }
+        return mapping.getProperty(javaType);
     }
 
     // for every ClassColumn, or other ClassSomething object you can get it's value with the <classSomething>.getField().get(object) methods

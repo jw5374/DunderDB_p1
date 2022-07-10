@@ -9,13 +9,11 @@ import com.dunderdb.annotations.*;
 public class ClassModel<T> {
     private Class<?> clazz;
     private ClassPrimaryKey primKey;
-    private List<ClassSerialKey> serKeys;
     private List<ClassForeignKey> forKeys;
     private List<ClassColumn> cols;
 	
 	public ClassModel(Class<?> clazz) {
 		this.clazz  = clazz;
-        this.serKeys = new ArrayList<>();
         this.forKeys = new ArrayList<>();
         this.cols = new ArrayList<>();
 	}
@@ -60,20 +58,6 @@ public class ClassModel<T> {
 		return forKeys;
 	}
 
-	public List<ClassSerialKey> getSerialKeys() {
-		Field[] fields = clazz.getDeclaredFields();
-
-		for(Field field : fields) {
-			SerialKey serkey = field.getAnnotation(SerialKey.class);
-
-			if(serkey!= null) {
-				serKeys.add(new ClassSerialKey(field));
-			}
-		}
-
-		return serKeys;
-	}
-
 	public ClassPrimaryKey getPrimaryKey() {
 		Field[] fields = clazz.getDeclaredFields();
 
@@ -95,10 +79,6 @@ public class ClassModel<T> {
 
 	public ClassPrimaryKey getPrimKey() {
 		return primKey;
-	}
-
-	public List<ClassSerialKey> getSerKeys() {
-		return serKeys;
 	}
 
 	public List<ClassForeignKey> getForKeys() {

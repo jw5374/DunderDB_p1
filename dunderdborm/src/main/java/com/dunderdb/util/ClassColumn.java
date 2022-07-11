@@ -19,4 +19,11 @@ public class ClassColumn extends ClassAnnotationExtractor {
         return field.getAnnotation(Column.class).name();
     }
 
+    public boolean isSerial() {
+        return field.getAnnotation(Column.class).serial();
+    }
+
+    public boolean isUnique() {
+        return field.getAnnotation(Column.class).unique();
+    }
 }

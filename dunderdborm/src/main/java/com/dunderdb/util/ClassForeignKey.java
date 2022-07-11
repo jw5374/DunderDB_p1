@@ -18,5 +18,9 @@ public class ClassForeignKey extends ClassAnnotationExtractor {
     public String getColumnName() {
         return field.getAnnotation(ForeignKey.class).name();
     }
+
+    public String getReference() {
+        return field.getAnnotation(ForeignKey.class).references();
+    }
     
 }

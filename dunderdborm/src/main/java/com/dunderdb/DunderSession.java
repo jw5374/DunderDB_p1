@@ -57,11 +57,6 @@ public interface DunderSession
 	Transaction getTransaction();
 	// close transaction
 	void transactionClose();
-	
-	
-	
-	// Get connection object, retrieves from SessionFactory
-	BasicDataSource retrieveConnection();
 
 	////////////
 	// Create //

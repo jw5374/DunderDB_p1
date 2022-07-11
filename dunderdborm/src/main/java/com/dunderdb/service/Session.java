@@ -1,6 +1,10 @@
 package com.dunderdb.service;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
 import org.apache.commons.dbcp2.BasicDataSource;
@@ -8,42 +12,25 @@ import org.apache.commons.dbcp2.BasicDataSource;
 import com.dunderdb.DunderSession;
 import com.dunderdb.util.ClassColumn;
 
-public class Session implements DunderSession 
+public class Session implements DunderSession, Closeable 
 {
-	static Transaction trx;
+	private Connection conn;
+	private Transaction tx;
 	
-	
-	public Session()
+	public Session(Connection conn)
 	{
 		// We need instantiate the tables based on current information. get it from model class.
+		this.conn = conn;
 	}
 	
 	// Create new Transaction object
 	//   returns the new transaction, or null if the current transaction hasn't been closed.
 	public Transaction beginTransaction()
 	{
-		if(trx==null)
-			return this.trx;
-		return null;
-	}
-	
-	// get current Transaction object
-	public Transaction getTransaction()
-	{
-		return this.trx;
-	}
-	
-	// close transaction
-	public void transactionClose()
-	{
-		trx.commitTransaction();
-		trx = null;
-	}
-	
-	// Get connection object, retrieves from SessionFactory
-	public BasicDataSource retrieveConnection()
-	{
-		return SessionFactory.getConnection();
+		if(tx == null) {
+			this.tx = new Transaction();
+		}
+		return this.tx;
 	}
 
 	////////////
@@ -66,7 +53,7 @@ public class Session implements DunderSession
 	}
 	
 	// add entity to 
-	public void  add(String entityName, Class<?> entity)
+	public void add(String entityName, Class<?> entity)
 	{
 		if(trx != null)
 		{
@@ -91,9 +78,9 @@ public class Session implements DunderSession
 	}
 	
 	// get all information from DB
-	public List<Class<?>> getAll()
+	public List<T> getAll(Class<?> clazz)
 	{
-		return null;
+		this.tx.addToQuery("SELECT * FROM table");
 	}
 	
 	// get all information by entity Type.
@@ -149,5 +136,13 @@ public class Session implements DunderSession
 		}
 	}
 
+	@Override
+	public void close() throws IOException {
+		try {
+			this.conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
 	
 }

@@ -8,12 +8,14 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.dunderdb.DunderSession;
+import com.dunderdb.annotations.Table;
 import com.dunderdb.exceptions.TransactionNotCommittedException;
 import com.dunderdb.util.ClassModel;
 import com.dunderdb.util.SQLConverter;
 
 public class Session implements DunderSession {
-	public static HashMap<String, ?> sessionCache = new HashMap<>();
+	public static HashMap<String, Object> sessionCache = new HashMap<>();
+	public static HashMap<String, List<Object>> sessionCacheGetAll = new HashMap<>();
 	private Connection conn;
 	private Transaction tx;
 	boolean inTransaction = false;
@@ -69,17 +71,33 @@ public class Session implements DunderSession {
 			e.printStackTrace();
 		}
 	}
-
+	
 	@Override
-	public <T> T get(Class<?> annotatedClazz, T pk) {
-		// TODO Auto-generated method stub
-		return null;
+	public <T> Object get(Class<?> clazz, T pk) {
+		String tableName = clazz.getAnnotation(Table.class).name();
+		ClassModel<Class<?>> mod = ClassModel.of(clazz);
+		String sql = "SELECT * FROM " + tableName + " WHERE " + mod.getPrimaryKey().getColumnName() +  " = " + pk;
+		if(sessionCache.containsKey(sql)) {
+			System.out.println("reached cache");
+			return sessionCache.get(sql);
+		}
+		Object tableObj = SQLConverter.getObjectFromTableRow(clazz, sql, mod, conn);
+		sessionCache.put(sql, tableObj);
+		return tableObj;
 	}
 
 	@Override
-	public <T> List<T> getAll(Class<?> clazz) {
-		// TODO Auto-generated method stub
-		return null;
+	public <T> List<Object> getAll(Class<?> clazz) {
+		String tableName = clazz.getAnnotation(Table.class).name();
+		ClassModel<Class<?>> mod = ClassModel.of(clazz);
+		String sql = "SELECT * FROM " + tableName;
+		if(sessionCacheGetAll.containsKey(sql)) {
+			System.out.println("reached cache");
+			return sessionCacheGetAll.get(sql);
+		}
+		List<Object> tableObjs = SQLConverter.getAllFromTable(clazz, sql, mod, conn);
+		sessionCacheGetAll.put(sql, tableObjs);
+		return tableObjs;
 	}
 
 	// updates existing object in table based on primary key
@@ -113,8 +131,18 @@ public class Session implements DunderSession {
 
 	@Override
 	public <T> void remove(Class<?> clazz, T pk) {
-		// TODO Auto-generated method stub
-		
+		String tableName = clazz.getAnnotation(Table.class).name();
+		ClassModel<Class<?>> mod = ClassModel.of(clazz);
+		String primary = mod.getPrimaryKey().getColumnName();
+		if(inTransaction) {
+			tx.addToQuery("DELETE FROM " + tableName + " WHERE " + primary +  " = " + pk);	
+			return;
+		}
+		try (Statement stmt = conn.createStatement()) {
+			stmt.executeUpdate("DELETE FROM " + tableName + " WHERE " + primary +  " = " + pk);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override

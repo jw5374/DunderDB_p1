@@ -1,7 +1,13 @@
 package com.dunderdb.util;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -29,6 +35,42 @@ public class SQLConverter {
             throw new UnexpectedTypeException();
         }
         return mapping.getProperty(javaType);
+    }
+
+    public static void setDynamicValue(Field field, ResultSet rs, String colName, Object obj) throws IllegalArgumentException, IllegalAccessException, SQLException {
+        field.setAccessible(true);
+        switch(field.getType().getSimpleName()) {
+            case "String":
+                field.set(obj, rs.getString(colName));
+                break;
+            case "int":
+                field.set(obj, rs.getInt(colName));
+                break;
+            case "double":
+                field.set(obj, rs.getDouble(colName));
+                break;
+            case "float":
+                field.set(obj, rs.getFloat(colName));
+                break;
+            case "long":
+                field.set(obj, rs.getLong(colName));
+                break;
+            case "short":
+                field.set(obj, rs.getShort(colName));
+                break;
+            case "Date":
+                field.set(obj, rs.getDate(colName));
+                break;
+            case "Time":
+                field.set(obj, rs.getTime(colName));
+                break;
+            case "Timestamp":
+                field.set(obj, rs.getTimestamp(colName));
+                break;
+            case "boolean":
+                field.set(obj, rs.getBoolean(colName));
+                break;
+        }
     }
 
     public static <T> String checkIfInsertValueString(Field field, T obj) throws IllegalArgumentException, IllegalAccessException {
@@ -132,6 +174,87 @@ public class SQLConverter {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public static Object getObjectFromTableRow(Class<?> clazz, String sqlString, ClassModel<Class<?>> mod, Connection conn) {
+		String primary = mod.getPrimKey().getColumnName();
+		List<ClassColumn> cols = mod.getColumns();
+		List<ClassForeignKey> fkeys = mod.getForeignKeys();
+		try (Statement stmt = conn.createStatement()) {
+			ResultSet rs = stmt.executeQuery(sqlString);
+			if(rs != null) {
+				rs.next();
+				Constructor<?> con = clazz.getConstructor();
+				Object newObj = con.newInstance();
+				mod.getPrimKey().getField().setAccessible(true);
+				SQLConverter.setDynamicValue(mod.getPrimKey().getField(), rs, primary, newObj);
+				for(ClassColumn col : cols) {
+					col.getField().setAccessible(true);
+					SQLConverter.setDynamicValue(col.getField(), rs, col.getColumnName(), newObj);
+				}
+				for(ClassForeignKey fkey : fkeys) {
+					fkey.getField().setAccessible(true);
+					SQLConverter.setDynamicValue(fkey.getField(), rs, fkey.getColumnName(), newObj);
+				}
+				return clazz.cast(newObj);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		}
+        return null;
+    }
+
+    public static List<Object> getAllFromTable(Class<?> clazz, String sqlString, ClassModel<Class<?>> mod, Connection conn) {
+        List<Object> results = new ArrayList<>();
+		String primary = mod.getPrimaryKey().getColumnName();
+		List<ClassColumn> cols = mod.getColumns();
+		List<ClassForeignKey> fkeys = mod.getForeignKeys();
+		try (Statement stmt = conn.createStatement()) {
+			ResultSet rs = stmt.executeQuery(sqlString);
+			while(rs.next()) {
+				Constructor<?> con = clazz.getConstructor();
+				Object newObj = con.newInstance();
+				mod.getPrimKey().getField().setAccessible(true);
+				SQLConverter.setDynamicValue(mod.getPrimKey().getField(), rs, primary, newObj);
+				for(ClassColumn col : cols) {
+					col.getField().setAccessible(true);
+					SQLConverter.setDynamicValue(col.getField(), rs, col.getColumnName(), newObj);
+				}
+				for(ClassForeignKey fkey : fkeys) {
+					fkey.getField().setAccessible(true);
+					SQLConverter.setDynamicValue(fkey.getField(), rs, fkey.getColumnName(), newObj);
+				}
+				results.add(clazz.cast(newObj));
+			}
+            return results;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		}
+        return null;
     }
 
     // for every ClassColumn, or other ClassSomething object you can get it's value with the <classSomething>.getField().get(object) methods

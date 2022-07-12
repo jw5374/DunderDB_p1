@@ -1,35 +1,39 @@
 package com.dunderdb.service;
 
-import java.io.Closeable;
+import java.sql.Statement;
 import java.io.IOException;
-import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
 
-import org.apache.commons.dbcp2.BasicDataSource;
-
 import com.dunderdb.DunderSession;
-import com.dunderdb.util.ClassColumn;
+import com.dunderdb.exceptions.TransactionNotCommittedException;
+import com.dunderdb.util.ClassModel;
+import com.dunderdb.util.SQLConverter;
 
-public class Session implements DunderSession, Closeable 
-{
+public class Session implements DunderSession {
+	public static HashMap<String, ?> sessionCache = new HashMap<>();
 	private Connection conn;
 	private Transaction tx;
-	
-	public Session(Connection conn)
-	{
+	boolean inTransaction = false;
+
+	public Session(Connection conn) {
 		// We need instantiate the tables based on current information. get it from model class.
 		this.conn = conn;
 	}
 	
 	// Create new Transaction object
 	//   returns the new transaction, or null if the current transaction hasn't been closed.
-	public Transaction beginTransaction()
-	{
-		if(tx == null) {
-			this.tx = new Transaction();
+	public Transaction beginTransaction() {
+		if(inTransaction) {
+			throw new TransactionNotCommittedException();
 		}
+		if(tx == null) {
+			this.tx = new Transaction(conn, this);
+		}
+		inTransaction = true;
+		this.tx.addToQuery("BEGIN");
 		return this.tx;
 	}
 
@@ -40,100 +44,60 @@ public class Session implements DunderSession, Closeable
 	// Note: these will keep tabs with Transaction;
 	
 	// create a table and prepare columns.
-	public void createTable(String tableName, List<ClassColumn> columns)
-	{
-		if(trx != null)
-		{
-			// IMPLEMENT
-		}
-		else 
-		{
-			System.out.println("Transaction hasn't been inititated.");
-		}
-	}
-	
-	// add entity to 
-	public void add(String entityName, Class<?> entity)
-	{
-		if(trx != null)
-		{
-			// IMPLEMENT
-		}
-		else 
-		{
-			System.out.println("Transaction hasn't been inititated.");
+	@Override
+	public void createTable(Class<?> clazz) {
+		ClassModel<Class<?>> mod = ClassModel.of(clazz);
+		String tableString = SQLConverter.createTableFromModel(mod);
+		try (Statement stmt = conn.createStatement()) {
+			stmt.executeUpdate(tableString);
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
 	}
 	
-	//////////
-	// Read //
-	//////////
-	
-	// is Transaction required for read methods?
-	
-	// retrieve data based on class type and primary key.
-	public Class<?> get(Class<?> entity, int pk)
-	{
+	// saves new object into table
+	@Override
+	public <T> void save(T obj) {
+		if(inTransaction) {
+			String insertString = SQLConverter.insertValueIntoTableString(obj);
+			tx.addToQuery(insertString);
+			return;
+		}
+		try (Statement stmt = conn.createStatement()) {
+			stmt.executeUpdate(SQLConverter.insertValueIntoTableString(obj));
+		} catch(SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public <T> T get(Class<?> annotatedClazz, T pk) {
+		// TODO Auto-generated method stub
 		return null;
 	}
-	
-	// get all information from DB
-	public List<T> getAll(Class<?> clazz)
-	{
-		this.tx.addToQuery("SELECT * FROM table");
-	}
-	
-	// get all information by entity Type.
-	public List<Class<?>> getAllByType(String entityName)
-	{
+
+	@Override
+	public <T> List<T> getAll(Class<?> clazz) {
+		// TODO Auto-generated method stub
 		return null;
 	}
-	
-	////////////
-	// Update //
-	////////////
-	
-	// update entity with inputted pk to the new given entity
-	public void set(String entityName, int pk, Class<?> newEntity)
-	{
-		if(trx != null)
-		{		
-			// IMPLEMENT
-		}
-		else 
-		{
-			System.out.println("Transaction hasn't been inititated.");
-		}
+
+	@Override
+	public <T> void update(T obj) {
+		// TODO Auto-generated method stub
+		
 	}
-	
-	////////////
-	// Delete //
-	////////////
-	
-	// drop the table
-	public void removeTable(String tableName)
-	{
-		if(trx != null)
-		{
-			// IMPLEMENT
-		}
-		else 
-		{
-			System.out.println("Transaction hasn't been inititated.");
-		}
+
+	@Override
+	public void removeTable(String tableName) {
+		// TODO Auto-generated method stub
+		
 	}
-	
-	// remove entity with inputted pk
-	public void remove(String entityName, int pk)
-	{
-		if(trx != null)
-		{			
-			// IMPLEMENT
-		}
-		else 
-		{
-			System.out.println("Transaction hasn't been inititated.");
-		}
+
+	@Override
+	public <T> void remove(Class<?> clazz, T pk) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	@Override

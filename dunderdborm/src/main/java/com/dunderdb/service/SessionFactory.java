@@ -28,8 +28,13 @@ public class SessionFactory implements DunderSessionFactory
 	
 	// getter for static session
 	@Override
-	public Session openSession() throws SQLException {
-		return new Session(ds.getConnection());
+	public Session openSession() {
+		try {
+			return new Session(ds.getConnection());
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 }

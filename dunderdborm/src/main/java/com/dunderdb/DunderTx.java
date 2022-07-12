@@ -2,10 +2,10 @@ package com.dunderdb;
 
 public interface DunderTx {
     
-     void savePoint();
+     void savePoint(String name);
 
 
-     void rollback();
+     void rollback(String name);
 
 
      void commit();

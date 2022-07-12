@@ -1,36 +1,47 @@
 package com.dunderdb.service;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+
 import com.dunderdb.DunderTx;
 
 public class Transaction implements DunderTx {
 
     private StringBuffer sqlQuery;
+    private Connection conn;
+    private Session ses;
 
-    public Transaction() {
+    public Transaction(Connection conn, Session ses) {
         this.sqlQuery = new StringBuffer();
+        this.conn = conn;
+        this.ses = ses;
     }
-
 
     public void addToQuery(String q) {
-        sqlQuery.append(q);
+        sqlQuery.append(q + ";");
     }
 
     @Override
-    public void savePoint() {
-        // TODO Auto-generated method stub
-        
+    public void savePoint(String name) {
+        sqlQuery.append("SAVEPOINT " + name + ";");
     }
 
     @Override
-    public void rollback() {
-        // TODO Auto-generated method stub
-        
+    public void rollback(String name) {
+        sqlQuery.append("ROLLBACK TO " + name + ";");        
     }
 
     @Override
     public void commit() {
-        // TODO Auto-generated method stub
-        
+        try (Statement stmt = conn.createStatement()) {
+            sqlQuery.append("COMMIT;");
+            stmt.executeUpdate(sqlQuery.toString());
+            ses.inTransaction = false;
+            sqlQuery.delete(0, sqlQuery.length());
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
 }

@@ -4,17 +4,15 @@ import com.dunderdb.DunderTx;
 
 public class Transaction implements DunderTx {
 
-    String name = "first name";
-    
-    @Override
-    public String beginTransaction(){
+    private StringBuffer sqlQuery;
 
-        return name;
+    public Transaction() {
+        this.sqlQuery = new StringBuffer();
     }
-    @Override
-    public void rollback() {
-        // TODO Auto-generated method stub
-        
+
+
+    public void addToQuery(String q) {
+        sqlQuery.append(q);
     }
 
     @Override
@@ -24,8 +22,15 @@ public class Transaction implements DunderTx {
     }
 
     @Override
-    public void commitTransaction(){
-    
-    }  
-    
+    public void rollback() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void commit() {
+        // TODO Auto-generated method stub
+        
+    }
+
 }

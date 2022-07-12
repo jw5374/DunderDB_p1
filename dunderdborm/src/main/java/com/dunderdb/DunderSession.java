@@ -32,8 +32,12 @@ package com.dunderdb;
 import java.io.Serializable;
 import java.util.List;
 
+import org.apache.commons.dbcp2.BasicDataSource;
+
+import com.dunderdb.annotations.Column;
 import com.dunderdb.service.Session;
 import com.dunderdb.service.Transaction;
+import com.dunderdb.util.ClassColumn;
 
 // https://www.tutorialspoint.com/hibernate/hibernate_quick_guide.htm
 // Session is used for a physical connection to the database.
@@ -43,24 +47,52 @@ import com.dunderdb.service.Transaction;
 //   This has samples of what session can do.
 public interface DunderSession 
 {
-
+	////////////////////////////
+	// Transaction Management //
+	////////////////////////////
+	
+	// Create new Transaction object
 	Transaction beginTransaction();
-	// "Connection" close();
-	Serializable save(Object object);
-	//"Session" get(String entityName, Serializable id);
-	
-	// CRUD Create, Read, Update, Delete
-	
-	// Create
-	
-	// Read
-	
-	// Update
-	void update(Object object);
-	void update(String entityName, Object object);
-	
-	// Delete
+	// get current Transaction object
+	Transaction getTransaction();
+	// close transaction
+	void transactionClose();
 
+	////////////
+	// Create //
+	////////////
+	
+	// create a table and prepare columns.
+	void createTable(String tableName, List<ClassColumn> columns);
+	// add entity to 
+	void add(String entityName, Class<?> entity);
+	
+	//////////
+	// Read //
+	//////////
+	
+	// retrieve data based on class type and primary key.
+	Class<?> get(Class<?> entity, int pk);
+	// get all information from DB
+	List<Class<?>> getAll();
+	// get all information by entity Type.
+	List<Class<?>> getAllByType(String entityName);
+	
+	////////////
+	// Update //
+	////////////
+	
+	// update entity with inputted pk to the new given entity
+	void set(String entityName, int pk, Class<?> newEntity);
+	
+	////////////
+	// Delete //
+	////////////
+	
+	// drop the table
+	void removeTable(String tableName);
+	// remove entity with inputted pk
+	void remove(String entityName, int pk);
     
     
 }

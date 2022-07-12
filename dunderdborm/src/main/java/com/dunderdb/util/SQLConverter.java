@@ -71,10 +71,10 @@ public class SQLConverter {
         Class<?> objClass = obj.getClass();
         StringBuffer sb = new StringBuffer();
         String tableName = objClass.getAnnotation(Table.class).name();
-        sb.append("INSERT INTO " + tableName + " (");
         ClassPrimaryKey pk = getObjectPrimaryKey(obj);
         List<ClassColumn> cols = getObjectColumns(obj);
         List<ClassForeignKey> fkeys = getObjectForeignKeys(obj);
+        sb.append("INSERT INTO " + tableName + " (");
         if(!pk.isSerial()) {
             sb.append(pk.getColumnName() + ", ");
         }
@@ -99,6 +99,34 @@ public class SQLConverter {
             }
             sb.delete(sb.length()-2, sb.length());
             sb.append(')');
+            return sb.toString();
+        } catch (IllegalArgumentException | IllegalAccessException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static <T> String updateValueIntoTableString(T obj) {
+        Class<?> objClass = obj.getClass();
+		StringBuffer sb = new StringBuffer();
+		String tableName = objClass.getAnnotation(Table.class).name();
+        ClassPrimaryKey pk = getObjectPrimaryKey(obj);
+        List<ClassColumn> cols = getObjectColumns(obj);
+        List<ClassForeignKey> fkeys = getObjectForeignKeys(obj);
+        sb.append("UPDATE " + tableName + " SET ");
+        try {
+            if(!pk.isSerial()) {
+                sb.append(pk.getColumnName() + " = " + checkIfInsertValueString(pk.getField(), obj));
+            }
+            for(ClassColumn col : cols) {
+                sb.append(col.getColumnName() + " = " + checkIfInsertValueString(col.getField(), obj));
+            }
+            for(ClassForeignKey fkey : fkeys) {
+                sb.append(fkey.getColumnName() + " = " + checkIfInsertValueString(fkey.getField(), obj));
+            }
+            sb.delete(sb.length() - 2, sb.length());
+            sb.append(" WHERE " + pk.getColumnName() + " = " + checkIfInsertValueString(pk.getField(), obj));
+            sb.delete(sb.length() - 2, sb.length());
             return sb.toString();
         } catch (IllegalArgumentException | IllegalAccessException e) {
             e.printStackTrace();

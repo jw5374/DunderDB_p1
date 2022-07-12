@@ -82,16 +82,33 @@ public class Session implements DunderSession {
 		return null;
 	}
 
+	// updates existing object in table based on primary key
+	// if key not found, nothing is changed
 	@Override
 	public <T> void update(T obj) {
-		// TODO Auto-generated method stub
-		
+		if(inTransaction) {
+			String updateString = SQLConverter.updateValueIntoTableString(obj);
+			tx.addToQuery(updateString);
+			return;
+		}
+		try (Statement stmt = conn.createStatement()) {
+			stmt.executeUpdate(SQLConverter.updateValueIntoTableString(obj));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public void removeTable(String tableName) {
-		// TODO Auto-generated method stub
-		
+		if(inTransaction) {
+			tx.addToQuery("DROP TABLE IF EXISTS " + tableName + " CASCADE");
+			return;
+		}
+		try (Statement stmt = conn.createStatement()) {
+			stmt.executeUpdate("DROP TABLE IF EXISTS " + tableName + " CASCADE");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override

@@ -87,7 +87,7 @@ public class SQLConverter {
         StringBuffer sql = new StringBuffer();
         sql.append("CREATE TABLE IF NOT EXISTS " + mod.getClazz().getAnnotation(Table.class).name() + " (");
         if(!pk.isSerial()) {
-            sql.append(pk.getColumnName() + " " + SQLConverter.convertType(pk.getType().toString()) + " PRIMARY KEY, ");
+            sql.append(pk.getColumnName() + " " + convertType(pk.getType().toString()) + " PRIMARY KEY, ");
         } else {
             sql.append(pk.getColumnName() + " serial PRIMARY KEY, "); 
         }
@@ -95,14 +95,14 @@ public class SQLConverter {
             if(!cols.get(i).getType().toString().equals("int") && cols.get(i).isSerial()) {
                 throw new SerialMismatchException();
             }
-            sql.append(cols.get(i).getColumnName() + " " + (cols.get(i).isSerial() ? "serial" : SQLConverter.convertType(cols.get(i).getType().toString())));
+            sql.append(cols.get(i).getColumnName() + " " + (cols.get(i).isSerial() ? "serial" : convertType(cols.get(i).getType().toString())));
             if(cols.get(i).isUnique()) {
                 sql.append(" UNIQUE");
             }
             sql.append(", ");
         }
         for(int i = 0; i < fkeys.size(); i++) {
-            sql.append(fkeys.get(i).getColumnName() + " " + SQLConverter.convertType(fkeys.get(i).getType().toString()) + " REFERENCES " + fkeys.get(i).getReference() + " ON DELETE CASCADE, ");
+            sql.append(fkeys.get(i).getColumnName() + " " + convertType(fkeys.get(i).getType().toString()) + " REFERENCES " + fkeys.get(i).getReference() + " ON DELETE CASCADE, ");
         }
         sql.delete(sql.length() - 2, sql.length());
         sql.append(')');
@@ -187,14 +187,14 @@ public class SQLConverter {
 				Constructor<?> con = clazz.getConstructor();
 				Object newObj = con.newInstance();
 				mod.getPrimKey().getField().setAccessible(true);
-				SQLConverter.setDynamicValue(mod.getPrimKey().getField(), rs, primary, newObj);
+				setDynamicValue(mod.getPrimKey().getField(), rs, primary, newObj);
 				for(ClassColumn col : cols) {
 					col.getField().setAccessible(true);
-					SQLConverter.setDynamicValue(col.getField(), rs, col.getColumnName(), newObj);
+					setDynamicValue(col.getField(), rs, col.getColumnName(), newObj);
 				}
 				for(ClassForeignKey fkey : fkeys) {
 					fkey.getField().setAccessible(true);
-					SQLConverter.setDynamicValue(fkey.getField(), rs, fkey.getColumnName(), newObj);
+					setDynamicValue(fkey.getField(), rs, fkey.getColumnName(), newObj);
 				}
 				return clazz.cast(newObj);
 			}
@@ -227,14 +227,14 @@ public class SQLConverter {
 				Constructor<?> con = clazz.getConstructor();
 				Object newObj = con.newInstance();
 				mod.getPrimKey().getField().setAccessible(true);
-				SQLConverter.setDynamicValue(mod.getPrimKey().getField(), rs, primary, newObj);
+				setDynamicValue(mod.getPrimKey().getField(), rs, primary, newObj);
 				for(ClassColumn col : cols) {
 					col.getField().setAccessible(true);
-					SQLConverter.setDynamicValue(col.getField(), rs, col.getColumnName(), newObj);
+					setDynamicValue(col.getField(), rs, col.getColumnName(), newObj);
 				}
 				for(ClassForeignKey fkey : fkeys) {
 					fkey.getField().setAccessible(true);
-					SQLConverter.setDynamicValue(fkey.getField(), rs, fkey.getColumnName(), newObj);
+					setDynamicValue(fkey.getField(), rs, fkey.getColumnName(), newObj);
 				}
 				results.add(clazz.cast(newObj));
 			}

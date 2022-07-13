@@ -1,35 +1,41 @@
 package com.dunderdb.service;
 
-import java.io.Closeable;
+import java.sql.Statement;
 import java.io.IOException;
-import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
 
-import org.apache.commons.dbcp2.BasicDataSource;
-
 import com.dunderdb.DunderSession;
-import com.dunderdb.util.ClassColumn;
+import com.dunderdb.annotations.Table;
+import com.dunderdb.exceptions.TransactionNotCommittedException;
+import com.dunderdb.util.ClassModel;
+import com.dunderdb.util.SQLConverter;
 
-public class Session implements DunderSession, Closeable 
-{
+public class Session implements DunderSession {
+	public static HashMap<String, Object> sessionCache = new HashMap<>();
+	public static HashMap<String, List<Object>> sessionCacheGetAll = new HashMap<>();
 	private Connection conn;
 	private Transaction tx;
-	
-	public Session(Connection conn)
-	{
-		// We need instantiate the tables based on current information. get it from model class.
+	boolean inTransaction = false;
+
+	public Session(Connection conn) {
 		this.conn = conn;
 	}
 	
 	// Create new Transaction object
 	//   returns the new transaction, or null if the current transaction hasn't been closed.
-	public Transaction beginTransaction()
-	{
-		if(tx == null) {
-			this.tx = new Transaction();
+	public Transaction beginTransaction() {
+		if(inTransaction) {
+			throw new TransactionNotCommittedException();
 		}
+		if(tx == null) {
+			this.tx = new Transaction(conn, this);
+		}
+		inTransaction = true;
+		this.tx.addToQuery("BEGIN");
 		return this.tx;
 	}
 
@@ -40,100 +46,137 @@ public class Session implements DunderSession, Closeable
 	// Note: these will keep tabs with Transaction;
 	
 	// create a table and prepare columns.
-	public void createTable(String tableName, List<ClassColumn> columns)
-	{
-		if(trx != null)
-		{
-			// IMPLEMENT
-		}
-		else 
-		{
-			System.out.println("Transaction hasn't been inititated.");
-		}
-	}
-	
-	// add entity to 
-	public void add(String entityName, Class<?> entity)
-	{
-		if(trx != null)
-		{
-			// IMPLEMENT
-		}
-		else 
-		{
-			System.out.println("Transaction hasn't been inititated.");
+	@Override
+	public void createTable(Class<?> clazz) {
+		ClassModel<Class<?>> mod = ClassModel.of(clazz);
+		String tableString = SQLConverter.createTableFromModel(mod);
+		try (Statement stmt = conn.createStatement()) {
+			stmt.executeUpdate(tableString);
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
 	}
 	
-	//////////
-	// Read //
-	//////////
-	
-	// is Transaction required for read methods?
-	
-	// retrieve data based on class type and primary key.
-	public Class<?> get(Class<?> entity, int pk)
-	{
-		return null;
-	}
-	
-	// get all information from DB
-	public List<T> getAll(Class<?> clazz)
-	{
-		this.tx.addToQuery("SELECT * FROM table");
-	}
-	
-	// get all information by entity Type.
-	public List<Class<?>> getAllByType(String entityName)
-	{
-		return null;
-	}
-	
-	////////////
-	// Update //
-	////////////
-	
-	// update entity with inputted pk to the new given entity
-	public void set(String entityName, int pk, Class<?> newEntity)
-	{
-		if(trx != null)
-		{		
-			// IMPLEMENT
+	// saves new object into table
+	@Override
+	public <T> void save(T obj) {
+		if(inTransaction) {
+			String insertString = SQLConverter.insertValueIntoTableString(obj);
+			tx.addToQuery(insertString);
+			return;
 		}
-		else 
-		{
-			System.out.println("Transaction hasn't been inititated.");
+		try (Statement stmt = conn.createStatement()) {
+			stmt.executeUpdate(SQLConverter.insertValueIntoTableString(obj));
+		} catch(SQLException e) {
+			e.printStackTrace();
 		}
 	}
+
+		////////////
+		//  Read  //
+		////////////
 	
-	////////////
-	// Delete //
-	////////////
-	
-	// drop the table
-	public void removeTable(String tableName)
-	{
-		if(trx != null)
-		{
-			// IMPLEMENT
+	// get single row from table based on primary key, return object
+	@Override
+	public <T> Object get(Class<?> clazz, T pk) {
+		String tableName = clazz.getAnnotation(Table.class).name();
+		ClassModel<Class<?>> mod = ClassModel.of(clazz);
+		String sql = "SELECT * FROM " + tableName + " WHERE " + mod.getPrimaryKey().getColumnName() +  " = " + pk;
+		if(sessionCache.containsKey(pk.toString())) {
+			return sessionCache.get(pk.toString());
 		}
-		else 
-		{
-			System.out.println("Transaction hasn't been inititated.");
+		Object tableObj = SQLConverter.getObjectFromTableRow(clazz, sql, mod, conn);
+		sessionCache.put(sql, tableObj);
+		return tableObj;
+	}
+
+	// get all rows from table and return list of objects
+	@Override
+	public <T> List<Object> getAll(Class<?> clazz) {
+		String tableName = clazz.getAnnotation(Table.class).name();
+		ClassModel<Class<?>> mod = ClassModel.of(clazz);
+		String sql = "SELECT * FROM " + tableName;
+		if(sessionCacheGetAll.containsKey(tableName)) {
+			return sessionCacheGetAll.get(tableName);
+		}
+		List<Object> tableObjs = SQLConverter.getAllFromTable(clazz, sql, mod, conn);
+		sessionCacheGetAll.put(sql, tableObjs);
+		return tableObjs;
+	}
+
+		////////////
+		// Update //
+		////////////
+
+	// updates existing object in table based on primary key
+	// if key not found, nothing is changed
+	@Override
+	public <T> void update(T obj) {
+		Field pkey = SQLConverter.getObjectPrimaryKey(obj).getField();
+		pkey.setAccessible(true);
+		if(inTransaction) {
+			String updateString = SQLConverter.updateValueIntoTableString(obj);
+			tx.addToQuery(updateString);
+		} else {
+			try (Statement stmt = conn.createStatement()) {
+				stmt.executeUpdate(SQLConverter.updateValueIntoTableString(obj));
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		try {
+			String pk = pkey.get(obj).toString();
+			sessionCache.replace(pk, this.get(obj.getClass(), pkey.get(obj)));
+		} catch (IllegalArgumentException | IllegalAccessException e1) {
+			e1.printStackTrace();
 		}
 	}
-	
-	// remove entity with inputted pk
-	public void remove(String entityName, int pk)
-	{
-		if(trx != null)
-		{			
-			// IMPLEMENT
+
+		////////////
+		// Delete //
+		////////////
+
+	// removes specified table from database
+	@Override
+	public void removeTable(String tableName) {
+		if(inTransaction) {
+			tx.addToQuery("DROP TABLE IF EXISTS " + tableName + " CASCADE");
+		} else {
+			try (Statement stmt = conn.createStatement()) {
+				stmt.executeUpdate("DROP TABLE IF EXISTS " + tableName + " CASCADE");
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
-		else 
-		{
-			System.out.println("Transaction hasn't been inititated.");
+		sessionCacheGetAll.remove(tableName);
+	}
+
+	// removes a specified row from table based on primary key value, and annotated class
+	@Override
+	public <T> void remove(Class<?> clazz, T pk) {
+		String tableName = clazz.getAnnotation(Table.class).name();
+		ClassModel<Class<?>> mod = ClassModel.of(clazz);
+		String primary = mod.getPrimaryKey().getColumnName();
+		if(inTransaction) {
+			tx.addToQuery("DELETE FROM " + tableName + " WHERE " + primary +  " = " + pk);	
+		} else {
+			try (Statement stmt = conn.createStatement()) {
+				stmt.executeUpdate("DELETE FROM " + tableName + " WHERE " + primary +  " = " + pk);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
+		try {
+			sessionCache.remove(pk.toString());
+		} catch (IllegalArgumentException e1) {
+			e1.printStackTrace();
+		}
+	}
+
+	// clear all saved queries, will allow potential inconsistencies to update.
+	public static void clearSessionCaches() {
+		sessionCache.clear();
+		sessionCacheGetAll.clear();
 	}
 
 	@Override

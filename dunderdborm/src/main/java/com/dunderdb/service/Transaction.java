@@ -18,7 +18,7 @@ public class Transaction implements DunderTx {
         this.ses = ses;
     }
 
-    public void addToQuery(String q) {
+    void addToQuery(String q) {
         sqlQuery.append(q + ";");
     }
 

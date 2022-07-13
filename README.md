@@ -12,18 +12,18 @@
    * [After setting up connection](#after-setting-up-connection)
       - [Full example snippet](#full-example-snippet)
    * [Set up sessions](#set-up-sessions)
-   * [Recommendations for Configuration placement](#dunderutil)
+   * [Recommendations for Configuration placement](#recommendations-for-configuration-placement)
 - [Usage](#usage)
    * [Annotating classes](#annotating-classes)
       - [Annotations](#annotations)
    * [Examples of Some Annotated Classes](#examples-of-some-annotated-classes)
-      - [Explanation](#class-explanations)
+      - [Explanation](#explanation)
          * [MyClass](#myclass)
-         * [MyOtherClass](#otherclass)
-   * [Using Sessions to interact with the database](#sessionusage)
-      - [Using Session without beginning a Transaction](#using-session-no-tx)
-      - [Using a Session to begin a Transaction](#using-session-being-tx)
-- [User API](#userapi)
+         * [MyOtherClass](#myotherclass)
+   * [Using Sessions to interact with the database](#using-sessions-to-interact-with-the-database)
+      - [Using Session without beginning a Transaction](#using-session-without-beginning-a-transaction)
+      - [Using a Session to begin a Transaction](#using-a-session-to-begin-a-transaction)
+- [User API](#user-api)
    * [Session methods](#session-methods)
    * [Transaction methods](#transaction-methods)
 - [License](#license)
@@ -125,9 +125,9 @@ Alternatively if you want to programmatically set it up:
 ### [Set up sessions](#set-up-sessions)
 1. Using your `Configuration` object, you can call `.getSessionFactory()` in order to obtain a `SessionFactory`
 2. Using this `SessionFactory`, you can then open a `Session` with `.openSession()`
-3. You can then use the `Session` to perform [operations](#sessionusage)
+3. You can then use the `Session` to perform [operations](#using-sessions-to-interact-with-the-database)
 
-### [Recommendations for Configuration placement](#dunderutil)
+### [Recommendations for Configuration placement](#recommendations-for-configuration-placement)
 It is recommended for you to create a pseudo-singleton pattern to set up your `Connection` and `SessionFactory`
 Example pseudo-singleton class:
 ```
@@ -223,25 +223,25 @@ class MyOtherClass
 	{String description = "This is some constructor";}
 }
 ```
-#### [Explanation](#class-explanations)
+#### [Explanation](#explanation)
 ##### [MyClass](#myclass)
 This Class is fully annotated and features all possible annotations that our package provides.
 These annotations designate a Table called "myTableName" to have it's columns include:
 - a Primary Key column named "myPrimaryKeyName"
-- a Foreign Key column named "otherTableKey" that is referenced in the class [`MyOtherClass`](#otherclass) 
+- a Foreign Key column named "otherTableKey" that is referenced in the class [`MyOtherClass`](#myotherclass) 
 - and a few other columns described by the `someField`, `number`, and `someMessage` fields within `MyClass`
-##### [MyOtherClass](#otherclass)
+##### [MyOtherClass](#myotherclass)
 This Class is fully annotated and features a portion of available annotations that our package provides.
 These annotations designate a Table called "othertable" to have it's columns include:
 - a Primary Key column named "id"
    - This column is referenced within `MyClass` as the `ForeignKey`
 - and a column described by the `someOtherField`
 
-### [Using Sessions to interact with the database](#sessionusage)
+### [Using Sessions to interact with the database](#using-sessions-to-interact-with-the-database)
 Usage of sessions assumes a pseudo-singleton utility class that will provide you with `Session` objects.
-We will refer back to the [`DunderUtil`](#dunderutil) class from before.
+We will refer back to the [`DunderUtil`](#recommendations-for-configuration-placement) class from before.
 You call `.getSession()` on the utility class to get a new `Session` object.
-#### [Using Session without beginning a Transaction](#using-session-no-tx)
+#### [Using Session without beginning a Transaction](#using-session-without-beginning-a-transaction)
 It is recommended to use a `try-with-resources` block to get a `Session`, otherwise you are responsible for closing the `Session` on your own.
 ```
    // ses will throw an Exception when .close() is called automatically, thus it needs to be handled
@@ -252,7 +252,7 @@ It is recommended to use a `try-with-resources` block to get a `Session`, otherw
       e.printStackTrace();
    }
 ```
-#### [Using a Session to begin a Transaction](#using-session-being-tx)
+#### [Using a Session to begin a Transaction](#using-a-session-to-begin-a-transaction)
 ```
    try(DunderSession ses = DunderUtil.getSession()) {
       DunderTx transaction = ses.beginTransaction();
@@ -264,9 +264,9 @@ It is recommended to use a `try-with-resources` block to get a `Session`, otherw
 ```
 
 Once you have access to a `Session` object there are many methods you can use.
-These methods will be detailed in the subsequent [section](#userapi)
+These methods will be detailed in the subsequent [section](#user-api)
 
-## [User API](#userapi)
+## [User API](#user-api)
 ### [Session methods](#session-methods)
 These are all methods callable on the `Session` object e.g. `ses.someMethodHere()`.
 - #### `public Transaction beginTransaction()`

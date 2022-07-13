@@ -1,50 +1,32 @@
 # Dunder DB
 
 ## Project Description
-Something like: A java based ORM for simplifying connecting to and from an SQL database without the need for SQL or connection management. 
-
-A java-based ORM for seemless access to a database(s) with persistent methods that relieves the burden of Query Language from the user.
+A java-based ORM for seamless access to a database. Users can persist classes and objects through the use of methods and annotations. This effectively relieves users from the burden of using a Query Language.
 
 ## Technologies Used
-
-* PostgreSQL - version 42.2.12  
-* Java - version 8.0  
-* Apache commons - version 2.1  
-* JUnit
-
 * PostgreSQL - version 42.4.0  
 * Java - version 8.0  
 * Apache commons - version 2.9.0
-* haven't used JUnit yet?
-* mention any maven?
-## Features
+* Maven
 
-List of features ready and TODOs for future development  
-* Easy to use and straightforward user API.  
-* No need for SQL, HQL, or any databse specific language.  
-* Straightforward and simple Annotation based for ease of use. 
-
+## Features  
 * Easy to integrate API through annotations and credential set-up.
 * All queries are handled via method calls, which means no need for understanding a Query Language
 * Annotations are plain in name and use, allowing for little confusion on interpretation. 
 * Credential set-up is done through a Configuration object, which stores data like the root and password to the database.
 * Operations are executed through a Session object, which performs CRUD operations on the database.
 
-* etc... ?
+* Should we mention serial keys and such?
 
 To-do list: [`for future iterations`]
 * Mapping of join columns inside of entities.    
-* Implement of aggregate functions.  
-* Allow ORM to build table based on Annotations in Entities.  
-* etc... ?
+* Implementation of aggregate functions.  
+* Implementation of Multiplicity Annotations such as OneToMany, ManyToOne, OneToOne, and ManyToMany.
 
 ## Getting Started  
 
-Any Information one would need to utilize your repo
-
-
 To begin:
-* Create a Configuration object and initialize..
+* Create a Configuration object and initial
 * Call Configuration's getSessionFactory() method to get a SessionFactory object that outputs sessions.
 * call SessionFactory's OpenSession() method to get a Session object that can perform CRUD operations on the Database specified in Configuration.
 

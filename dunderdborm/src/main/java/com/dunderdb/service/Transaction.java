@@ -28,6 +28,12 @@ public class Transaction implements DunderTx {
     }
 
     @Override
+    public void releaseSavepoint(String name) {
+        sqlQuery.append("RELEASE SAVEPOINT " + name);
+        
+    }
+    
+    @Override
     public void rollback(String name) {
         sqlQuery.append("ROLLBACK TO " + name + ";");        
     }

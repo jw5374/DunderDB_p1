@@ -16,7 +16,7 @@ import com.dunderdb.util.SQLConverter;
 
 public class Session implements DunderSession {
 	public static HashMap<String, Object> sessionCache = new HashMap<>();
-	public static HashMap<String, List<Object>> sessionCacheGetAll = new HashMap<>();
+	public static HashMap<String, Object> sessionCacheGetAll = new HashMap<>();
 	private Connection conn;
 	private Transaction tx;
 	boolean inTransaction = false;
@@ -63,12 +63,17 @@ public class Session implements DunderSession {
 		if(inTransaction) {
 			String insertString = SQLConverter.insertValueIntoTableString(obj);
 			tx.addToQuery(insertString);
-			return;
+		} else {
+			try (Statement stmt = conn.createStatement()) {
+				stmt.executeUpdate(SQLConverter.insertValueIntoTableString(obj));
+			} catch(SQLException e) {
+				e.printStackTrace();
+			}
 		}
-		try (Statement stmt = conn.createStatement()) {
-			stmt.executeUpdate(SQLConverter.insertValueIntoTableString(obj));
-		} catch(SQLException e) {
-			e.printStackTrace();
+		try {
+			sessionCacheGetAll.replace(obj.getClass().getAnnotation(Table.class).name(), this.getAll(obj.getClass()));
+		} catch (IllegalArgumentException e1) {
+			e1.printStackTrace();
 		}
 	}
 
@@ -78,28 +83,28 @@ public class Session implements DunderSession {
 	
 	// get single row from table based on primary key, return object
 	@Override
-	public <T> Object get(Class<?> clazz, T pk) {
+	public <T,E> T get(Class<T> clazz, E pk) {
 		String tableName = clazz.getAnnotation(Table.class).name();
 		ClassModel<Class<?>> mod = ClassModel.of(clazz);
 		String sql = "SELECT * FROM " + tableName + " WHERE " + mod.getPrimaryKey().getColumnName() +  " = " + pk;
 		if(sessionCache.containsKey(pk.toString())) {
-			return sessionCache.get(pk.toString());
+			return (T) sessionCache.get(pk.toString());
 		}
-		Object tableObj = SQLConverter.getObjectFromTableRow(clazz, sql, mod, conn);
+		T tableObj = SQLConverter.getObjectFromTableRow(clazz, sql, mod, conn);
 		sessionCache.put(sql, tableObj);
 		return tableObj;
 	}
 
 	// get all rows from table and return list of objects
 	@Override
-	public <T> List<Object> getAll(Class<?> clazz) {
+	public <T> List<T> getAll(Class<T> clazz) {
 		String tableName = clazz.getAnnotation(Table.class).name();
 		ClassModel<Class<?>> mod = ClassModel.of(clazz);
 		String sql = "SELECT * FROM " + tableName;
 		if(sessionCacheGetAll.containsKey(tableName)) {
-			return sessionCacheGetAll.get(tableName);
+			return (List<T>) sessionCacheGetAll.get(tableName);
 		}
-		List<Object> tableObjs = SQLConverter.getAllFromTable(clazz, sql, mod, conn);
+		List<T> tableObjs = SQLConverter.getAllFromTable(clazz, sql, mod, conn);
 		sessionCacheGetAll.put(sql, tableObjs);
 		return tableObjs;
 	}
@@ -168,6 +173,7 @@ public class Session implements DunderSession {
 		}
 		try {
 			sessionCache.remove(pk.toString());
+			sessionCacheGetAll.replace(tableName, this.getAll(clazz));
 		} catch (IllegalArgumentException e1) {
 			e1.printStackTrace();
 		}

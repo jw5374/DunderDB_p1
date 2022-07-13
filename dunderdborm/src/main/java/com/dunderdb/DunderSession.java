@@ -27,9 +27,9 @@ public interface DunderSession extends AutoCloseable
 	//////////
 	
 	// retrieve data based on class and primary key.
-	<T> Object get(Class<?> annotatedClazz, T pk);
+	<T, E> T get(Class<T> annotatedClazz, E pk);
 	// get all information from Class table
-	<T> List<Object> getAll(Class<?> clazz);
+	<T> List<T> getAll(Class<T> clazz);
 	
 	////////////
 	// Update //

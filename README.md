@@ -16,22 +16,122 @@ A java-based ORM for seamless access to a database. Users can persist classes an
 * Credential set-up is done through a Configuration object, which stores data like the root and password to the database.
 * Operations are executed through a Session object, which performs CRUD operations on the database.
 
-* Should we mention serial keys and such?
-
 To-do list: [`for future iterations`]
 * Mapping of join columns inside of entities.    
 * Implementation of aggregate functions.  
 * Implementation of Multiplicity Annotations such as OneToMany, ManyToOne, OneToOne, and ManyToMany.
+* Support multiple different SQL Vendors
 
-## Getting Started  
+## Getting Started 
 
-To begin:
-* Create a Configuration object and initial
-* Call Configuration's getSessionFactory() method to get a SessionFactory object that outputs sessions.
-* call SessionFactory's OpenSession() method to get a Session object that can perform CRUD operations on the Database specified in Configuration.
+### From Git
+1. cd into directory you want to download this repository to 
+2. run `git clone https://github.com/jw5374/DunderDB_p1.git`
+3. cd into `./dunderdborm` and run `mvn install`
+4. make note of the pom.xml project id's
+```
+  <groupId>com.dunderdb</groupId>
+  <artifactId>dunderdborm</artifactId>
+  <version>0.0.1-Alpha</version>
+```
 
+### After cloning
+#### To set up connection via properties file:
+1. Inside your project create a resources folder in `./src/main` and create a properties file with whatever name you choose.
+   * e.g. `config.properties`
+
+Example of properties file:
+```
+DB_URL=jdbc:postgresql://localhost:5432/postgres
+DB_USER=postgres
+DB_PASS=postgres
+DB_DRIVER=org.postgresql.Driver
+
+// These options below are optional
+DB_SCHEMA=example // default: public
+MAX_IDLE_CONNECTIONS=20 // default: 10
+MAX_OPEN_STATEMENTS=25 // default: 100
+```
+#### To set up connection programmatically:
+1. Create a new instance of `Configuration` with no arguments
+2. Use the `.createConnection(String url, String username, String pass)` method to set your connection credentials
+   * Optionally: `createConnection(String url, String username, String pass, String schemaName)` will allow you to set your schema name in one line (Schema is defaulted to `public`)
+   * URL is a JDBC url for your SQL vendor (Currently only Postgresql is confirmed to be supported)
+3. Use `.setConnectionDriver(String driverName)` to set your JDBC driver to allow database interaction
+
+#### After setting up connection
+1. Add annotated class literals with `.addAnnotatedClass(Class<?> clazz)`
+   * e.g. `.addAnnotatedClass(Demo.class)`
+   * This can be repeated for as many classes you would like
+2. When you've finished adding all classes, call `.setupDatabase()` to create your tables from the classes that were added.
+
+##### Full example snippet
+(`Configuration` throws `IOException` when reading from file so you must handle it)
+```
+   Configuration config;
+   try {
+      config = new Configuration("config.properties");
+      config.addAnnotatedClass(Demo.class);
+      config.addAnnotatedClass(Demo2.class);
+      config.setupDatabase();
+   } catch (IOException e) {
+      e.printStackTrace();
+   }
+```
+Alternatively:
+```
+   Configuration config = new Configuration();
+   config.createConnection("jdbc:postgresql://localhost:5432/postgres", "postgres", "postgres");
+   config.setConnectionSchema("example");
+   config.setConnectionDriver("org.postgresql.Driver");
+   config.setMaxIdleConnections(10);
+   config.setMaxOpenStatements(20);
+   config.addAnnotatedClass(Demo.class);
+   config.addAnnotatedClass(Demo2.class);
+   config.setupDatabase();
+```
+#### Set up sessions
+1. Using your `Configuration` object you can call `.getSessionFactory()` in order to obtain a `SessionFactory`
+2. Using this `SessionFactory` you can then open a `Session` with `.openSession()`
+3. You can then use the `Session` to perform [operations](#usage)
+
+##### Recommendations for Configuration placement
+It is recommended for you to create a pseudo-singleton pattern to set up your `Connnection` and `SessionFactory`
+Example pseudo-singleton class:
+```
+package com.example.util;
+
+import java.io.IOException;
+
+import com.dunderdb.DunderSession;
+import com.dunderdb.DunderSessionFactory;
+import com.dunderdb.config.Configuration;
+import com.example.democlasses.Demo;
+
+public class DunderUtil {
+
+    private static DunderSessionFactory sf;
+
+    static {
+        Configuration config;
+        try {
+            config = new Configuration("config.properties")
+            config.addAnnotatedClass(Demo.class);
+            config.addAnnotatedClass(Demo2.class);
+            config.setupDatabase();
+            sf = config.getSessionFactory();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static DunderSession getSession() {
+        return sf.openSession();
+    }
+}
+```
   
-## Usage  
+## [Usage](#usage)  
   ### Annotating classes  
   All classes which represent objects in database must be annotated.
    - #### @Table(name = "table_name")  

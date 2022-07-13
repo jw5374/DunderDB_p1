@@ -22,7 +22,7 @@
          * [MyOtherClass](#otherclass)
    * [Using Sessions to interact with the database](#sessionusage)
       - [Using Session without beginning a Transaction](#using-session-no-tx)
-      - [Using a Session to begin a Transaction](using-session-being-tx)
+      - [Using a Session to begin a Transaction](#using-session-being-tx)
 - [User API](#userapi)
    * [Session methods](#session-methods)
    * [Transaction methods](#transaction-methods)
@@ -252,7 +252,7 @@ It is recommended to use a `try-with-resources` block to get a `Session`, otherw
       e.printStackTrace();
    }
 ```
-#### [Using a Session to begin a Transaction](using-session-being-tx)
+#### [Using a Session to begin a Transaction](#using-session-being-tx)
 ```
    try(DunderSession ses = DunderUtil.getSession()) {
       DunderTx transaction = ses.beginTransaction();

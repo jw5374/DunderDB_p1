@@ -3,6 +3,8 @@
 ## Project Description
 Something like: A java based ORM for simplifying connecting to and from an SQL database without the need for SQL or connection management. 
 
+A java-based ORM for seemless access to a database(s) with persistent methods that relieves the burden of Query Language from the user.
+
 ## Technologies Used
 
 * PostgreSQL - version 42.2.12  
@@ -10,39 +12,73 @@ Something like: A java based ORM for simplifying connecting to and from an SQL d
 * Apache commons - version 2.1  
 * JUnit
 
+* PostgreSQL - version 42.4.0  
+* Java - version 8.0  
+* Apache commons - version 2.9.0
+* haven't used JUnit yet?
+* mention any maven?
 ## Features
 
 List of features ready and TODOs for future development  
 * Easy to use and straightforward user API.  
 * No need for SQL, HQL, or any databse specific language.  
 * Straightforward and simple Annotation based for ease of use. 
-* etc...
+
+* Easy to integrate API through annotations and credential set-up.
+* All queries are handled via method calls, which means no need for understanding a Query Language
+* Annotations are plain in name and use, allowing for little confusion on interpretation. 
+* Credential set-up is done through a Configuration object, which stores data like the root and password to the database.
+* Operations are executed through a Session object, which performs CRUD operations on the database.
+
+* etc... ?
 
 To-do list: [`for future iterations`]
 * Mapping of join columns inside of entities.    
 * Implement of aggregate functions.  
 * Allow ORM to build table based on Annotations in Entities.  
-* etc...
+* etc... ?
 
 ## Getting Started  
 
 Any Information one would need to utilize your repo
+
+
+To begin:
+* Create a Configuration object and initialize..
+* Call Configuration's getSessionFactory() method to get a SessionFactory object that outputs sessions.
+* call SessionFactory's OpenSession() method to get a Session object that can perform CRUD operations on the Database specified in Configuration.
+
   
 ## Usage  
   ### Annotating classes  
   All classes which represent objects in database must be annotated.
-   - #### @Table(name = "table_name)  
+   - #### @Table(name = "table_name")  
       - Indicates that this class is associated with table 'table_name'  
-   - #### @Column(name = "column_name)  
+   - #### @Column(name = "column_name")  
       - Indicates that the Annotated field is a column in the table with the name 'column_name'  
-   - #### @Setter(name = "column_name")  
-      - Indicates that the anotated method is a setter for 'column_name'.  
-   - #### @Getter(name = "column_name")  
-      - Indicates that the anotated method is a getter for 'column_name'.  
    - #### @PrimaryKey(name = "column_name") 
       - Indicates that the annotated field is the primary key for the table.
-   - #### @SerialKey(name = "column_name") 
-      - Indicates that the annotated field is a serial key.
+  ### Example
+   - #### Here, we are making a table based on myClass's Class file, not instances of it's objects. It assigns columns via Column and PrimaryKey Annotations.
+   - #### The PrimaryKey Annotation is used to identify each instance of this object via an assumed unique int field, pk.
+   - #### The Column Annotation is used to identify the field to set as a column in a table. Any instance of an object will have its fields distributed into its class's table as a record.
+   
+```
+@Table(name="myTableName")
+public class myClass
+{
+	@PrimaryKey(name="myPrimaryKeyName")
+	int pk;
+	
+	@Column(name="myColumnName")
+	String someField = "Some default value";
+	
+	myClass()
+	{String description = "This is some constructor";}
+}
+```
+
+It would be beneficial to provide a snippet of code to show as an example.
 
   ### User API  
   

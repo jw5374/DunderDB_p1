@@ -176,7 +176,7 @@ public class SQLConverter {
         }
     }
 
-    public static Object getObjectFromTableRow(Class<?> clazz, String sqlString, ClassModel<Class<?>> mod, Connection conn) {
+    public static <T> T getObjectFromTableRow(Class<T> clazz, String sqlString, ClassModel<Class<?>> mod, Connection conn) {
 		String primary = mod.getPrimKey().getColumnName();
 		List<ClassColumn> cols = mod.getColumns();
 		List<ClassForeignKey> fkeys = mod.getForeignKeys();
@@ -216,16 +216,16 @@ public class SQLConverter {
         return null;
     }
 
-    public static List<Object> getAllFromTable(Class<?> clazz, String sqlString, ClassModel<Class<?>> mod, Connection conn) {
-        List<Object> results = new ArrayList<>();
+    public static <T> List<T> getAllFromTable(Class<T> clazz, String sqlString, ClassModel<Class<?>> mod, Connection conn) {
+        List<T> results = new ArrayList<>();
 		String primary = mod.getPrimaryKey().getColumnName();
 		List<ClassColumn> cols = mod.getColumns();
 		List<ClassForeignKey> fkeys = mod.getForeignKeys();
 		try (Statement stmt = conn.createStatement()) {
 			ResultSet rs = stmt.executeQuery(sqlString);
 			while(rs.next()) {
-				Constructor<?> con = clazz.getConstructor();
-				Object newObj = con.newInstance();
+				Constructor<T> con = clazz.getConstructor();
+				T newObj = con.newInstance();
 				mod.getPrimKey().getField().setAccessible(true);
 				setDynamicValue(mod.getPrimKey().getField(), rs, primary, newObj);
 				for(ClassColumn col : cols) {

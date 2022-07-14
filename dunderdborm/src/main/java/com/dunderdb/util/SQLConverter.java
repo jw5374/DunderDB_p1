@@ -182,22 +182,21 @@ public class SQLConverter {
 		List<ClassForeignKey> fkeys = mod.getForeignKeys();
 		try (Statement stmt = conn.createStatement()) {
 			ResultSet rs = stmt.executeQuery(sqlString);
-			if(rs != null) {
-				rs.next();
-				Constructor<?> con = clazz.getConstructor();
-				Object newObj = con.newInstance();
-				mod.getPrimKey().getField().setAccessible(true);
-				setDynamicValue(mod.getPrimKey().getField(), rs, primary, newObj);
-				for(ClassColumn col : cols) {
-					col.getField().setAccessible(true);
-					setDynamicValue(col.getField(), rs, col.getColumnName(), newObj);
-				}
-				for(ClassForeignKey fkey : fkeys) {
-					fkey.getField().setAccessible(true);
-					setDynamicValue(fkey.getField(), rs, fkey.getColumnName(), newObj);
-				}
-				return clazz.cast(newObj);
-			}
+            if(rs.next()) {
+                Constructor<?> con = clazz.getConstructor();
+                Object newObj = con.newInstance();
+                mod.getPrimKey().getField().setAccessible(true);
+                setDynamicValue(mod.getPrimKey().getField(), rs, primary, newObj);
+                for(ClassColumn col : cols) {
+                    col.getField().setAccessible(true);
+                    setDynamicValue(col.getField(), rs, col.getColumnName(), newObj);
+                }
+                for(ClassForeignKey fkey : fkeys) {
+                    fkey.getField().setAccessible(true);
+                    setDynamicValue(fkey.getField(), rs, fkey.getColumnName(), newObj);
+                }
+                return clazz.cast(newObj);
+            }
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} catch (NoSuchMethodException e) {

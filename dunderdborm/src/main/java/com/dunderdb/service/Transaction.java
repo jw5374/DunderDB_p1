@@ -29,7 +29,7 @@ public class Transaction implements DunderTx {
 
     @Override
     public void releaseSavepoint(String name) {
-        sqlQuery.append("RELEASE SAVEPOINT " + name);
+        sqlQuery.append("RELEASE SAVEPOINT " + name + ";");
         
     }
     
